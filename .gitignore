@@ -1,2 +1,4 @@
 .vscode
 Pipfile.lock
+data/dump*
+data/__pycache__

@@ -1,22 +1,49 @@
 import psycopg2
+import warnings
 
 
-def db_connect():
-    con, cur = None, None
+class Db:
+    def __init__(self):
+        self.connection = None
 
-    try:
-        con = psycopg2.connect(
-            host="localhost", database="fyp", user="postgres", password="root"
-        )
-    except Exception:
-        con = None
-        print("Unable to connect to database")
+    def connect(self):
+        try:
+            self.connection = psycopg2.connect(
+                host="localhost", database="fyp", user="postgres", password="root"
+            )
+        except Exception:
+            print("Unable to connect to database")
 
-    if con is not None:
-        cur = con.cursor()
+    def disconnect(self):
+        if self.connection:
+            self.connection.commit()
+            self.connection.close()
 
-    return con, cur
+    def execute(self, query: str, value: tuple = None, return_data: bool = False):
+        data = None
 
+        # handle empty query
+        query = query.strip()
+        if not query:
+            warnings.warn("empty query")
+            return
 
-def db_disconnect(con):
-    con.close()
+        # connect to db
+        if not self.connection or self.connection.closed != 0:
+            self.connect()
+
+        # execute query
+        cursor = self.connection.cursor()
+        if value:
+            cursor.execute(query, value)
+        else:
+            cursor.execute(query)
+
+        if return_data:
+            data = cursor.fetchall()
+
+        # disconnect from db
+        if self.connection.closed == 0:
+            self.disconnect()
+
+        return data
