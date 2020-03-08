@@ -5,6 +5,10 @@ Pipfile.lock
 __pycache__
 
 data
+!data/__init__.py
 !data/db.py
 !data/scraper.py
-!data/annotated.json
+
+utils
+
+models
