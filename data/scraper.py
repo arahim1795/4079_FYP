@@ -1,69 +1,99 @@
-# %%
 from bs4 import BeautifulSoup
-from newspaper import Article
+
+from newspaper import Article, Config
 import requests
+from selenium import webdriver
+
+import os
 from tqdm import tqdm
-
-import db
-
-
-def download_article(url: str):
-    try:
-        article = Article(url)
-        article.download()
-        article.parse()
-    except Exception as e:
-        print(e)
-
-    if article.url and article.title and article.text and article.authors:
-        return (article.url, article.title, article.text, article.authors[0])
-
-    return None
+from typing import List
+import warnings
 
 
-url = "https://seekingalpha.com/news/3542453-severe-worker-shortage-u-s-factories-in-china"
+class Scraper:
+    def __init__(self, db):
+        self.db = db
 
-print(download_article(url))
+        # newspaper3k
+        user_agent = (
+            "Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0"
+        )
+        self.config = Config()
+        self.config.browser_user_agent = user_agent
 
-# %%
+        # driver
+        path = os.path.join(os.getcwd() + "\\utils\\geckodriver.exe")
+        options = webdriver.FirefoxOptions()
+        options.add_argument("--headless")
+        self.driver = webdriver.Firefox(executable_path=path, firefox_options=options)
 
+    def _download_article(self, url: str) -> tuple:
+        data = None
 
-def scrape(db):
+        try:
+            article = Article(url, config=self.config)
+            article.download()
+            article.parse()
+        except Exception as e:
+            print(e)
 
-    base_urls = ["https://www.fool.com/investing-news/?page="]
+        if article.url and article.title and article.text and article.authors:
+            data = (str(article.url), str(article.title), str(article.text), str(article.authors[0]))
 
-    for base_url in base_urls:
-        # handler: fool.com
+        return data
+
+    def _extract_new_articles(self, base_url: str, soup, stored_articles: List[str]):
+        links = []
         if "fool.com" in base_url:
-            for i in tqdm(range(1, 5)):
+            links = set(
+                [
+                    "https://www.fool.com" + str(link["href"])
+                    for link in soup.find_all("a", href=True)
+                    if "/investing/2" in link["href"]
+                ]
+            )
+        elif "seekingalpha.com" in base_url:
+            links = set(
+                [
+                    "https://seekingalpha.com" + str(link["href"])
+                    for link in soup.find_all("a", href=True)
+                    if "/news" in link["href"]
+                ]
+            )
+        else:
+            warnings.warn("URL not supported")
 
-                return_data = db.execute("SELECT url FROM articles.article", None, True)
-                stored_articles = [url[0] for url in return_data]
+        if links:
+            links = [link for link in links if link not in stored_articles]
 
-                url = base_url + str(i)
+        return links
 
-                html = requests.get(url)
-                soup = BeautifulSoup(html.text)
+    def quit_driver(self):
+        self.driver.quit()
+        self.driver = None
 
-                links = set(
-                    [
-                        "https://www.fool.com" + str(link["href"])
-                        for link in soup.find_all("a", href=True)
-                        if "/investing/2" in link["href"]
-                    ]
-                )
+    def scrape(self, base_url: str, require_driver=False):
+        query = "INSERT INTO articles.article (url, title, content, author) VALUES (%s, %s, %s, %s) ON CONFLICT DO NOTHING"
 
-                links = [link for link in links if link not in stored_articles]
+        stored_articles = self.db.read("SELECT url FROM articles.article")
+        stored_articles = [article[0] for article in stored_articles]
 
-                query = """
-                            INSERT INTO articles.article(url, title, content, author) VALUES (%s, %s, %s, %s) ON CONFLICT DO NOTHING
-                        """
+        for i in tqdm(range(0, 5)):
+            form_url = base_url + str(i + 1)
 
-                for link in links:
-                    parsed_article = download_article(link)
+            if require_driver:
+                # execute driver
+                self.driver.get(base_url)
+                html = self.driver.page_source
+            else:
+                form_url = base_url + str(1)
+                html = requests.get(form_url).text
 
-                    db.execute(query, parsed_article)
+            soup = BeautifulSoup(html, features="lxml")
 
+            links = self._extract_new_articles(base_url, soup, stored_articles)
 
-database = db.Db()
-scrape(database)
+            for link in links:
+                parsed_article = self._download_article(link)
+                if parsed_article:
+                    self.db.write(query, parsed_article)

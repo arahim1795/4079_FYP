@@ -1,4 +1,10 @@
-.vscode
+*.log
 Pipfile.lock
-data/dump*
-data/__pycache__
+
+.vscode
+__pycache__
+
+data
+!data/db.py
+!data/scraper.py
+!data/annotated.json

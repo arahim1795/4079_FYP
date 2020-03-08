@@ -6,13 +6,18 @@ verify_ssl = true
 [dev-packages]
 jupyter = "*"
 notebook = "*"
-rope = "*"
 
 [packages]
 psycopg2 = "*"
 newspaper3k = "*"
 tqdm = "*"
 beautifulsoup4 = "*"
+selenium = "*"
+nltk = "*"
+spacy = "*"
+colorama = "*"
+textblob = "*"
+numpy = "*"
 
 [requires]
 python_version = "3.8"
