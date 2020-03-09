@@ -18,6 +18,7 @@ spacy = "*"
 colorama = "*"
 textblob = "*"
 numpy = "*"
+scikit-learn = "*"
 
 [requires]
 python_version = "3.8"

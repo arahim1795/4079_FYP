@@ -8,4 +8,4 @@ data/*
 !data/__init__.py
 !data/db.py
 !data/scraper.py
-!data/annotated_data.csv
+!data/*.csv

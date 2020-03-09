@@ -309,7 +309,7 @@ class Annotator:
         if save_success:
             print("Export Successful")
 
-    # def automatic_annotation(self, raw_text: str, data_file: str, out_file: str):
+    # def automatic_annotation(self, articles: List[str], save_file: str):
     #     exisiting_list = self._load_file(data_file)
 
     #     sentences = [
