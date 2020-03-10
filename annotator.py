@@ -1,17 +1,17 @@
 from colorama import init, Fore
 import csv
+import multiprocessing as mp
 from nltk.corpus import stopwords
 import re
+from sklearn.utils import gen_even_slices
 import spacy
-
-# from textblob import TextBlob
-# from textblob.classifiers import NaiveBayesClassifier
-from typing import List, Tuple, Union
+from textblob.classifiers import NaiveBayesClassifier
+from tqdm import trange
+from typing import List, Optional, Tuple, Union
 
 
 class Annotator:
-    def __init__(self, db):
-        self.db = db
+    def __init__(self):
         self.nlp = spacy.load("en_core_web_lg")
 
         init()
@@ -55,69 +55,82 @@ class Annotator:
 
         return paragraphs
 
-    def _pre_cleanse_text(self, text: str) -> str:
+    def _pre_cleanse_text(self, text: str) -> Union[str, None]:
         # # core
-        # # TODO: More Stocker Tickers
-        # tickers = ["OTC", "NASDAQ", "NYSE"]
-        # ticker_patterns = ["\\(" + ticker + ":.+?\\)" for ticker in tickers]
+        try:
+            # # TODO: More Stocker Tickers
+            # tickers = ["OTC", "NASDAQ", "NYSE"]
+            # ticker_patterns = ["\\(" + ticker + ":.+?\\)" for ticker in tickers]
 
-        # for pattern in ticker_patterns:
-        #     text = re.sub(pattern, "", text)
+            # for pattern in ticker_patterns:
+            #     text = re.sub(pattern, "", text)
 
-        generic_patterns = [
-            ["\\(.+?:.+?\\)", ""],
-            ["\\.\\.\\.", ""],
-            ["\\([\\w+, !\\?]+\\)", ""],
-            ["  ", " "],
-            [" \\.", "."],
-            [" ,", ","],
-            ["^\\d\\. ", ""],
-            ["U\\.S\\.", "United States"],
-            ["\\.+\\?", ""],
-            ['"', ""],
-            ["\\b\\w+n't\\b", "not"],
-        ]
-        for pattern in generic_patterns:
-            text = re.sub(pattern[0], pattern[1], text)
+            generic_patterns = [
+                ["\\(.+?:.+?\\)", ""],
+                ["\\.\\.\\.", ""],
+                ["\\([\\w+, !\\?]+\\)", ""],
+                [" \\.", "."],
+                [" ,", ","],
+                ["^\\d\\. ", ""],
+                ["U\\.S\\.", "United States"],
+                ["\\.+\\?", ""],
+                ['"', ""],
+                ["\\b\\w+n't\\b", "not"],
+                [" ?-- ?", ""],
+                ["  ", " "],
+            ]
+            for pattern in generic_patterns:
+                text = re.sub(pattern[0], pattern[1], text)
 
-        wanted_stopwords = [
-            "above",
-            "after",
-            "against",
-            "before",
-            "below",
-            "but",
-            "down",
-            "less",
-            "more",
-            "most",
-            "no",
-            "nor",
-            "not",
-            "off",
-            "only",
-            "under",
-            "until",
-            "too",
-            "up",
-        ]
-        stop_words = [
-            e for e in stopwords.words("english") if e not in wanted_stopwords
-        ]
+            wanted_stopwords = [
+                "above",
+                "after",
+                "against",
+                "before",
+                "below",
+                "but",
+                "down",
+                "less",
+                "more",
+                "most",
+                "no",
+                "nor",
+                "not",
+                "off",
+                "only",
+                "under",
+                "until",
+                "too",
+                "up",
+            ]
+            stop_words = [
+                e for e in stopwords.words("english") if e not in wanted_stopwords
+            ]
 
-        text = [word for word in text.split() if word.lower() not in stop_words]
-        text[0] = text[0].capitalize()
-        text = " ".join(word for word in text)
+            text = [word for word in text.split() if word.lower() not in stop_words]
+            text[0] = text[0].capitalize()
+            text = " ".join(word for word in text)
 
-        stopword_pattern = ["[Hh]ere", "[TtWw]hat", "[Tt]here"]
-        stopword_pattern = ["\\b" + pattern + "'s\\b" for pattern in stopword_pattern]
-        stopword_pattern += ["\\b\\w+'ll\\b", "\\b[Ii](t|'((ve)|m))\\b", "\\b(([Yy]ou)|([Tt]hey))'re\\b"]
-        for pattern in stopword_pattern:
-            text = re.sub(pattern, "", text)
+            stopword_pattern = ["[Hh]ere", "[TtWw]hat", "[Tt]here"]
+            stopword_pattern = [
+                "\\b" + pattern + "'s\\b" for pattern in stopword_pattern
+            ]
+            stopword_pattern += [
+                "\\b\\w+'ll\\b",
+                "\\b(([Yy]ou)|([Tt]hey)|([Ww]e))('(r|v)e)?\\b",
+                "\\b[Uu]s\\b",
+                "\\b[Tt]hem\\b",
+                "\\b[Ii](t(self)?|'((ve)|m))\\b"
+            ]
+            for pattern in stopword_pattern:
+                text = re.sub(pattern, "", text)
 
-        text = text.replace("  ", " ")
+            text = text.replace("  ", " ")
 
-        return text.strip()
+            return text.strip()
+        except Exception as e:
+            print(e)
+            return None
 
     def _sentence_segmentor(self, text: str) -> list:
         # init
@@ -130,7 +143,12 @@ class Annotator:
 
     def _post_cleanse_text(self, text: str) -> str:
         # core
-        generic_patterns = [[".+\\?", ""], [".+vs\\..+", ""], [".*[Ll]et's.*", ""]]
+        generic_patterns = [
+            [".+\\?", ""],
+            [".+vs\\..+", ""],
+            [".*[Ll]et's.*", ""],
+            [" 's", "'s"],
+        ]
         for pattern in generic_patterns:
             text = re.sub(pattern[0], pattern[1], text)
 
@@ -143,7 +161,24 @@ class Annotator:
         text = self.nlp(text)
         text = " ".join([token.lemma_ for token in text])
 
-        return text.strip().replace(" - - ", "--").replace(" - ", "-").replace(" 's", "'s")
+        generic_patterns = [
+            ["\\$ ", "$"],
+            [" %", "%"],
+            [" ;", ";"],
+            ["\\( ", "("],
+            [" \\)", ")"],
+            [" - - ", ""],
+            [" - ", ""],
+            [" 's", "'s"],
+            [" \\.", "."],
+            [" ,", ","],
+            ["  ", " "],
+        ]
+
+        for pattern in generic_patterns:
+            text = re.sub(pattern[0], pattern[1], text)
+
+        return text.strip()
 
     def manual_annotation(self, articles: List[str], save_file: str):
         # init: load saved annotated data
@@ -168,6 +203,7 @@ class Annotator:
         paragraphed_text = [
             self._pre_cleanse_text(paragraph) for paragraph in paragraphed_text
         ]
+        paragraphed_text = list(filter(None, paragraphed_text))
 
         # 3
         segmented_text = []
@@ -263,7 +299,7 @@ class Annotator:
         if load_success:
             print("Import Successful")
 
-        # core
+        # core: process unannotated data
         # 1: Basic Paragraphing
         # 2: Pre Cleanse Text
         # 3: Segment into Sentences via NLP
@@ -280,6 +316,7 @@ class Annotator:
         paragraphed_text = [
             self._pre_cleanse_text(paragraph) for paragraph in paragraphed_text
         ]
+        paragraphed_text = list(filter(None, paragraphed_text))
 
         # 3
         segmented_text = []
@@ -309,35 +346,84 @@ class Annotator:
         if save_success:
             print("Export Successful")
 
-    # def automatic_annotation(self, articles: List[str], save_file: str):
-    #     exisiting_list = self._load_file(data_file)
+    def _multi_annotate(self, sentences: List[str], classifier) -> List[Tuple[str]]:
+        # 1: pos, 2: neu, 3: neg
+        annotated = []
+        for i in trange(len(sentences)):
+            annotated.append(
+                tuple((sentences[i], int(classifier.classify(sentences[i]))))
+            )
+        return annotated
 
-    #     sentences = [
-    #         self._sanitise(sentence) for sentence in self._sentencise(raw_text)
-    #     ]
+    def automatic_annotation(self, articles: List[str], save_file: str):
+        # init: load saved annotated data
+        load_success, annotated_data = self._load(save_file)
+        if load_success:
+            print("Import Successful")
 
-    #     sentences = self._lemmatise(sentences)
+        annotated_data = [tuple((datum[0], datum[1])) for datum in annotated_data]
 
-    #     sentences = [self._sanitise(sentence) for sentence in sentences]
+        # core: process unannotated data
+        # 1: Basic Paragraphing
+        # 2: Pre Cleanse Text
+        # 3: Segment into Sentences via NLP
+        # 4: Post Cleanse Text
+        # 5: Lemmatise Text
+        # 6: Multi-Process Annotate Text
 
-    #     with open("./data/" + data_file + ".json", "r") as file:
-    #         classifier = NaiveBayesClassifier(file, format="json")
+        # 1
+        paragraphed_text = []
+        for article in articles:
+            paragraphed_text += self._paragrapher(article)
 
-    #     print("Classifying Statements (Auto)")
+        # 2
+        paragraphed_text = [
+            self._pre_cleanse_text(paragraph) for paragraph in paragraphed_text
+        ]
+        paragraphed_text = list(filter(None, paragraphed_text))
 
-    #     auto_classified = []
+        # 3
+        segmented_text = []
+        for paragraph in paragraphed_text:
+            segmented_text += self._sentence_segmentor(paragraph)
 
-    #     for i in range(len(sentences)):
+        # 4
+        segmented_text = [
+            self._post_cleanse_text(sentence) for sentence in segmented_text
+        ]
+        segmented_text = list(filter(None, segmented_text))
 
-    #         if not sentences[i] or sentences[i] == "happen" or sentences[i] == '"':
-    #             continue
+        with open("./data/auto_annotated.txt", "w") as f:
+            f.write("\n".join(segmented_text))
 
-    #         d = {}
-    #         classified = classifier.prob_classify(sentences[i])
-    #         d["text"] = sentences[i]
-    #         d["label"] = classified.max()
-    #         auto_classified.append(d)
+        # 5
+        segmented_text = [
+            self._lemmatise_sentence(sentence) for sentence in segmented_text
+        ]
 
-    #     exisiting_list = exisiting_list + auto_classified
+        # 6
+        num_threads = mp.cpu_count() - 2
+        p = mp.Pool(processes=num_threads)
 
-    #     self._save_file(out_file, exisiting_list)
+        classifier = NaiveBayesClassifier(annotated_data)
+
+        zipped_model = []
+        zipped_data = []
+        slices = list(gen_even_slices(len(segmented_text), num_threads))
+
+        for s in slices:
+            zipped_data.append(segmented_text[s])
+            zipped_model.append(classifier)
+
+        data = p.starmap(self._multi_annotate, zip(zipped_data, zipped_model))
+
+        annotated = []
+        for dataset in data:
+            annotated += dataset
+
+        if data:
+            annotated_data += annotated
+
+        save_success = self._save(save_file, annotated_data)
+        if save_success:
+            print("Export Successful")

@@ -1,18 +1,3 @@
-import csv
-
-# from spacy.lang.en import English
-# from spacy.pipeline import Sentencizer
-# from spacy.tokenizer import Tokenizer
-import multiprocessing as mp
-import numpy
-from sklearn.utils import gen_even_slices
-from textblob import TextBlob
-
-# from textblob.classifiers import NaiveBayesClassifier
-from textblob.sentiments import NaiveBayesAnalyzer, PatternAnalyzer
-from tqdm import tqdm
-
-
 import annotator as an
 import data.db as db
 
@@ -46,39 +31,6 @@ import data.db as db
 
 # TODO Implement Textblob Sentiment Analyser
 
-# core
-# 1: Basic Paragraphing
-# 2: Pre Cleanse Text
-# 3: Segment into Sentences via NLP
-# 4: Post Cleanse Text
-# 5: Lemmatise Text
-# 6: Annotate Text
-
-# # 1
-# paragraphed_text = []
-# for article in articles:
-#     paragraphed_text += annotate._paragrapher(article)
-
-# # 2
-# paragraphed_text = [
-#     annotate._pre_cleanse_text(paragraph) for paragraph in paragraphed_text
-# ]
-
-# # 3
-# segmented_text = []
-# for paragraph in paragraphed_text:
-#     segmented_text += annotate._sentence_segmentor(paragraph)
-
-# # 4
-# segmented_text = [
-#     annotate._post_cleanse_text(sentence) for sentence in segmented_text
-# ]
-# segmented_text = list(filter(None, segmented_text))
-
-# # 5
-# segmented_text = [
-#     annotate._lemmatise_sentence(sentence) for sentence in segmented_text
-# ]
 
 # X DEV X
 # newly_annotated = []
@@ -91,51 +43,30 @@ import data.db as db
 # X DEV X
 
 
-def auto(data, blob):
-    blobbed = []
-
-    for i in tqdm(range(len(data))):
-        blobbed.append([data[i][0], blob[i].sentiment.classification])
-
-    return blobbed
-
-
 def main():
-    # setup multiprocessing
-    num_threads = mp.cpu_count() - 2
-    p = mp.Pool(processes=num_threads)
+    # init
+    db_handler = db.Db()
+    annotator_instance = an.Annotator()
 
-    data = []
-    with open("./data/auto_annotated.csv", "r") as csvfile:
-        data = list(csv.reader(csvfile))
+    # core
+    # 1: scrape
+    # 2: annotate
+    # 3: evaluate
 
-    data_textblob = [
-        TextBlob(datum[0], analyzer=NaiveBayesAnalyzer()) for datum in data
-    ]
+    # 1
+    # TODO copy scraper
 
-    slices = list(gen_even_slices(len(data), num_threads))
+    # 2
+    articles = db_handler.read(
+        "SELECT content FROM articles.article WHERE url LIKE '%fool.com%';"
+    )
+    articles = [article[0] for article in articles][10:20]
 
-    sliced_data = []
-    sliced_textblob = []
+    annotator_instance.automatic_annotation(articles, "auto_annotated")
 
-    for s in slices:
-        sliced_data.append(data[s])
-        sliced_textblob.append(data_textblob[s])
+    # 3
+    # TODO evaluator
 
-    dataset = p.starmap(auto, zip(sliced_data, sliced_textblob))
-
-    print(dataset)
-
-    # annotated = []
-    # for i in tqdm(range(len(data))):
-    #     annotated.append([data[i][0], data_textblob[i].sentiment.classification])
-
-
-# with open("./data/auto_annonated.csv", "w", newline="") as csvfile:
-#     csv_writer = csv.writer(csvfile)
-#     csv_writer.writerows(data)
-
-# print(data_textblob[0].sentiment.classification)
 
 if __name__ == "__main__":
     main()
