@@ -66,18 +66,18 @@ class Annotator:
             #     text = re.sub(pattern, "", text)
 
             generic_patterns = [
-                ["\\(.+?:.+?\\)", ""],
+                ["\\(?[A-Z]+?:[A-Z\\.]+?\\)", ""],
                 ["\\.\\.\\.", ""],
                 ["\\([\\w+, !\\?]+\\)", ""],
-                [" \\.", "."],
-                [" ,", ","],
-                ["^\\d\\. ", ""],
-                ["U\\.S\\.", "United States"],
                 ["\\.+\\?", ""],
                 ['"', ""],
                 ["\\b\\w+n't\\b", "not"],
-                [" ?-- ?", ""],
+                [" ?-- ?", " "],
+                [" \\.", "."],
+                [" ,", ","],
                 ["  ", " "],
+                ["^\\d\\. ", ""],
+                ["[A-Z]+\\$", "$"],
             ]
             for pattern in generic_patterns:
                 text = re.sub(pattern[0], pattern[1], text)
@@ -119,13 +119,24 @@ class Annotator:
                 "\\b\\w+'ll\\b",
                 "\\b(([Yy]ou)|([Tt]hey)|([Ww]e))('(r|v)e)?\\b",
                 "\\b[Uu]s\\b",
-                "\\b[Tt]hem\\b",
-                "\\b[Ii](t(self)?|'((ve)|m))\\b"
+                "\\b[Tt]hem((self)|(selves))?\\b",
+                "\\b[Ii](t((self)|(selves))?|'((ve)|m))\\b",
+                "\\bme\\b",
+                " (\\[\\])|(\\(\\))",
             ]
             for pattern in stopword_pattern:
                 text = re.sub(pattern, "", text)
 
             text = text.replace("  ", " ")
+
+            specific_patterns = [
+                ["A\\.[Oo]\\.", "AO"],
+                ["P/E", "price-to-earning"],
+                ["U\\.S\\.", "United States"],
+                ["[Nn]o\\.", "number"],
+            ]
+            for pattern in specific_patterns:
+                text = re.sub(pattern[0], pattern[1], text)
 
             return text.strip()
         except Exception as e:
@@ -144,10 +155,10 @@ class Annotator:
     def _post_cleanse_text(self, text: str) -> str:
         # core
         generic_patterns = [
+            ["^: ", ""],
             [".+\\?", ""],
             [".+vs\\..+", ""],
             [".*[Ll]et's.*", ""],
-            [" 's", "'s"],
         ]
         for pattern in generic_patterns:
             text = re.sub(pattern[0], pattern[1], text)
@@ -156,22 +167,26 @@ class Annotator:
 
     def _lemmatise_sentence(self, text: str) -> str:
         # core
-        text = text.replace(",", "").replace(".", "")
+        generic_patterns = [["\\.$", ""], [",", ""]]
+        for pattern in generic_patterns:
+            text = re.sub(pattern[0], pattern[1], text)
 
         text = self.nlp(text)
         text = " ".join([token.lemma_ for token in text])
 
         generic_patterns = [
+            [" \\.", "."],
+            [" 's", "'s"],
+            [" '", ""],
+            ["' ", " "],
             ["\\$ ", "$"],
             [" %", "%"],
             [" ;", ";"],
+            [" :", ":"],
+            [":$", ""],
             ["\\( ", "("],
             [" \\)", ")"],
-            [" - - ", ""],
-            [" - ", ""],
-            [" 's", "'s"],
-            [" \\.", "."],
-            [" ,", ","],
+            [" - ", "-"],
             ["  ", " "],
         ]
 
@@ -337,12 +352,12 @@ class Annotator:
         # 6
         newly_annotated = []
         for sentence in segmented_text:
-            newly_annotated.append([sentence, None])
+            newly_annotated.append([sentence, ""])
 
         annotated_data += newly_annotated
 
         # final
-        save_success = self._save(save_file, annotated_data)
+        save_success = self._save(save_file, newly_annotated)
         if save_success:
             print("Export Successful")
 
@@ -392,9 +407,6 @@ class Annotator:
             self._post_cleanse_text(sentence) for sentence in segmented_text
         ]
         segmented_text = list(filter(None, segmented_text))
-
-        with open("./data/auto_annotated.txt", "w") as f:
-            f.write("\n".join(segmented_text))
 
         # 5
         segmented_text = [
