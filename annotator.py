@@ -111,16 +111,17 @@ class Annotator:
             text[0] = text[0].capitalize()
             text = " ".join(word for word in text)
 
-            stopword_pattern = ["[Hh]ere", "[TtWw]hat", "[Tt]here"]
+            stopword_pattern = ["[Ss]?[Hh]e(re)?", "[TtWw]hat", "[Tt]here"]
             stopword_pattern = [
                 "\\b" + pattern + "'s\\b" for pattern in stopword_pattern
             ]
             stopword_pattern += [
+                "\\b[Ss]?[Hh]e\\b",
                 "\\b\\w+'ll\\b",
                 "\\b(([Yy]ou)|([Tt]hey)|([Ww]e))('(r|v)e)?\\b",
                 "\\b[Uu]s\\b",
                 "\\b[Tt]hem((self)|(selves))?\\b",
-                "\\b[Ii](t((self)|(selves))?|'((ve)|m))\\b",
+                "\\b[Ii](t((self)|(selves))?|'((ve)|m|d))\\b",
                 "\\bme\\b",
                 " (\\[\\])|(\\(\\))",
             ]
@@ -132,6 +133,8 @@ class Annotator:
             specific_patterns = [
                 ["A\\.[Oo]\\.", "AO"],
                 ["P/E", "price-to-earning"],
+                ["P/S", "price-to-sale"],
+                ["N/A", "not-applicable"],
                 ["U\\.S\\.", "United States"],
                 ["[Nn]o\\.", "number"],
             ]
@@ -155,7 +158,6 @@ class Annotator:
     def _post_cleanse_text(self, text: str) -> str:
         # core
         generic_patterns = [
-            ["^: ", ""],
             [".+\\?", ""],
             [".+vs\\..+", ""],
             [".*[Ll]et's.*", ""],
@@ -183,9 +185,11 @@ class Annotator:
             [" %", "%"],
             [" ;", ";"],
             [" :", ":"],
+            ["^: ", ""],
             [":$", ""],
             ["\\( ", "("],
             [" \\)", ")"],
+            ["!", ""],
             [" - ", "-"],
             ["  ", " "],
         ]
@@ -357,7 +361,7 @@ class Annotator:
         annotated_data += newly_annotated
 
         # final
-        save_success = self._save(save_file, newly_annotated)
+        save_success = self._save(save_file, annotated_data)
         if save_success:
             print("Export Successful")
 

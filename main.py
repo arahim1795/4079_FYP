@@ -7,7 +7,7 @@ def main():
     # init
     db_handler = db.Db()
     annotator_instance = an.Annotator()
-    scraper = sc.Scraper(db_handler)
+    # scraper = sc.Scraper(db_handler)
 
     # core
     # 1: scrape
@@ -25,14 +25,14 @@ def main():
     # scraper.quit_driver()
 
     # 2
-    # TODO Completely Analysis of All Articles
+    # TODO Complete Analysis of All Articles
     articles = db_handler.read(
         "SELECT content FROM articles.article WHERE url LIKE '%fool.com%';"
     )
-    articles = [article[0] for article in articles][:10]
+    articles = [article[0] for article in articles][50:60]
 
+    annotator_instance.automatic_annotation(articles, "auto_annotated")
     # annotator_instance._unannotated_csv_export(articles, "auto_annotated")
-    annotator_instance._unannotated_csv_export(articles, "auto_annotated")
 
     # 3
     # TODO evaluator
