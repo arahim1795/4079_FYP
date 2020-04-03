@@ -19,6 +19,8 @@ colorama = "*"
 textblob = "*"
 numpy = "*"
 scikit-learn = "*"
+flask = "*"
+flask-wtf = "*"
 
 [requires]
 python_version = "3.8"

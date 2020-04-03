@@ -1,0 +1,35 @@
+{% extends "base.html" %} {% block content %}
+
+<div class="container h-100">
+  <div class="row align-items-center h-100">
+    <div class="mx-auto">
+      <div class="jumbotron">
+        <h1 class="display-4" style="text-align:center">
+          <strong>Sentiment Analyser</strong>
+        </h1>
+        <br />
+        <form method="POST" action="">
+          {{ form.hidden_tag() }}
+          <fieldset class="form-group">
+            <div class="form-group">
+              {% if form.url.errors %} {{ form.url(class="form-control
+              form-control-lg is-invalid") }}
+              <div class="invalid-feedback">
+                {% for error in form.url.errors %}
+                <span>{{ error }}</span>
+                {% endfor %}
+              </div>
+              {% else %} {{ form.url(class="form-control form-control-lg") }} {%
+              endif %}
+            </div>
+          </fieldset>
+          <div class="form-group" style="text-align:center">
+            {{ form.submit(class="btn btn-lg btn-info") }}
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock content %}

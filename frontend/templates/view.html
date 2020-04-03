@@ -1,0 +1,87 @@
+{% extends "base.html" %} {% block content %}
+
+<div class="container">
+  <br />
+  <h3 style="text-align:center">
+    <a href="{{ article.0 }}" target="_blank" rel="noopener noreferrer">
+      <strong>{{ article.1 }}</strong>
+    </a>
+  </h3>
+  <br />
+  <h5 style="text-align:center">{{ article.3 }}</h5>
+  <br />
+  <div id="accordion">
+    <div class="card">
+      <div class="card-header" id="headingOne">
+        <h5 class="mb-0">
+          <button
+            class="btn btn-link"
+            data-toggle="collapse"
+            data-target="#article"
+            aria-expanded="true"
+            aria-controls="article"
+          >
+            Original Article
+          </button>
+        </h5>
+      </div>
+
+      <div
+        id="article"
+        class="collapse"
+        aria-labelledby="headingOne"
+        data-parent="#accordion"
+      >
+        <div class="card-body" style="white-space: pre-wrap;">
+          {{ article.2 }}
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header" id="headingTwo">
+        <h5 class="mb-0">
+          <button
+            class="btn btn-link"
+            data-toggle="collapse"
+            data-target="#parsedArticle"
+            aria-expanded="true"
+            aria-controls="parsedArticle"
+          >
+            Parsed Article
+          </button>
+        </h5>
+      </div>
+
+      <div
+        id="parsedArticle"
+        class="collapse"
+        aria-labelledby="headingTwo"
+        data-parent="#accordion"
+      >
+        <div class="card-body">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">Parsed Sentences</th>
+                <th scope="col">Classification</th>
+                <th scope="col">Probability</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for annotate in annotated %}
+              <tr>
+                <td>{{ annotate.0 }}</td>
+                <td>{{ annotate.1 }}</td>
+                <td>{{ annotate.2 }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <br />  
+</div>
+
+{% endblock content %}
