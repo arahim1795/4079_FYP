@@ -1,0 +1,1 @@
+psql -U postgres fyp < %~dp0fyp.sql

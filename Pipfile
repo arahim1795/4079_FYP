@@ -4,21 +4,19 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
-jupyter = "*"
-notebook = "*"
 
 [packages]
 psycopg2 = "*"
 newspaper3k = "*"
-tqdm = "*"
-beautifulsoup4 = "*"
 selenium = "*"
+beautifulsoup4 = "*"
+tqdm = "*"
 nltk = "*"
 spacy = "*"
-colorama = "*"
 textblob = "*"
-numpy = "*"
 scikit-learn = "*"
+numpy = "*"
+colorama = "*"
 flask = "*"
 flask-wtf = "*"
 

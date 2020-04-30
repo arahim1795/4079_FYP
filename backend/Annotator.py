@@ -5,10 +5,9 @@ from nltk.corpus import stopwords
 import re
 from sklearn.utils import gen_even_slices
 import spacy
-import sys
 from textblob.classifiers import NaiveBayesClassifier
 from tqdm import trange
-from typing import List, Optional, Tuple, Union
+from typing import List, Tuple, Union
 
 
 class Annotator:
@@ -41,7 +40,9 @@ class Annotator:
 
     def _save(self, save_file: str, data: List[List[str]]) -> bool:
         try:
-            with open("./backend/data/" + save_file + ".csv", "w", newline="") as csvfile:
+            with open(
+                "./backend/data/" + save_file + ".csv", "w", newline=""
+            ) as csvfile:
                 csv_writer = csv.writer(csvfile)
                 csv_writer.writerows(data)
             return True
@@ -313,55 +314,47 @@ class Annotator:
         elif save_success:
             print("Annotation Terminated")
 
-    def _unannotated_csv_export(self, articles: List[str], save_file: str):
+    def unannotated_csv_export(self, articles: List[str], save_file: str):
         # init: load saved annotated data
         load_success, annotated_data = self._load(save_file)
         if load_success:
             print("Import Successful")
 
-        # core: process unannotated data
-        # 1: Basic Paragraphing
-        # 2: Pre Cleanse Text
-        # 3: Segment into Sentences via NLP
-        # 4: Post Cleanse Text
-        # 5: Lemmatise
-        # 6: Append Unannotated Data
-
-        # 1
+        # 1: paragraphing
         paragraphed_text = []
         for article in articles:
             paragraphed_text += self._paragrapher(article)
 
-        # 2
+        # 2: pre-cleansing
         paragraphed_text = [
             self._pre_cleanse_text(paragraph) for paragraph in paragraphed_text
         ]
         paragraphed_text = list(filter(None, paragraphed_text))
 
-        # 3
+        # 3: segmenting
         segmented_text = []
         for paragraph in paragraphed_text:
             segmented_text += self._sentence_segmentor(paragraph)
 
-        # 4
+        # 4: post-cleansing
         segmented_text = [
             self._post_cleanse_text(sentence) for sentence in segmented_text
         ]
         segmented_text = list(filter(None, segmented_text))
 
-        # 5
+        # 5: lemmatising
         segmented_text = [
             self._lemmatise_sentence(sentence) for sentence in segmented_text
         ]
 
-        # 6
+        # 6: finilising
         newly_annotated = []
         for sentence in segmented_text:
             newly_annotated.append([sentence, ""])
 
         annotated_data += newly_annotated
 
-        # final
+        # export
         save_success = self._save(save_file, annotated_data)
         if save_success:
             print("Export Successful")
@@ -383,42 +376,34 @@ class Annotator:
 
         annotated_data = [tuple((datum[0], datum[1])) for datum in annotated_data]
 
-        # core: process unannotated data
-        # 1: Basic Paragraphing
-        # 2: Pre Cleanse Text
-        # 3: Segment into Sentences via NLP
-        # 4: Post Cleanse Text
-        # 5: Lemmatise Text
-        # 6: Multi-Process Annotate Text
-
-        # 1
+        # 1: paragraphing
         paragraphed_text = []
         for article in articles:
             paragraphed_text += self._paragrapher(article)
 
-        # 2
+        # 2: pre-cleansing
         paragraphed_text = [
             self._pre_cleanse_text(paragraph) for paragraph in paragraphed_text
         ]
         paragraphed_text = list(filter(None, paragraphed_text))
 
-        # 3
+        # 3: segmenting
         segmented_text = []
         for paragraph in paragraphed_text:
             segmented_text += self._sentence_segmentor(paragraph)
 
-        # 4
+        # 4: post-cleansing
         segmented_text = [
             self._post_cleanse_text(sentence) for sentence in segmented_text
         ]
         segmented_text = list(filter(None, segmented_text))
 
-        # 5
+        # 5: lemmatising
         segmented_text = [
             self._lemmatise_sentence(sentence) for sentence in segmented_text
         ]
 
-        # 6
+        # 6: multiprocess annotating
         num_threads = mp.cpu_count() - 2
         p = mp.Pool(processes=num_threads)
 
@@ -453,53 +438,52 @@ class Annotator:
 
         classifier = NaiveBayesClassifier(annotated_data)
 
-        # core: process unannotated data
-        # 1: Basic Paragraphing
-        # 2: Pre Cleanse Text
-        # 3: Segment into Sentences via NLP
-        # 4: Post Cleanse Text
-        # 5: Lemmatise Text
-        # 6: Annotate Text
-
-        # 1
+        # 1: paragraphing
         paragraphed_text = self._paragrapher(article)
 
-        # 2
+        # 2: pre-cleansing
         paragraphed_text = [
             self._pre_cleanse_text(paragraph) for paragraph in paragraphed_text
         ]
         paragraphed_text = list(filter(None, paragraphed_text))
 
-        # 3
+        # 3: segmenting
         segmented_text = []
         for paragraph in paragraphed_text:
             segmented_text += self._sentence_segmentor(paragraph)
 
-        # 4
+        # 4: post-cleansing
         segmented_text = [
             self._post_cleanse_text(sentence) for sentence in segmented_text
         ]
         segmented_text = list(filter(None, segmented_text))
 
-        # 5
+        # 5: lemmatising
         segmented_text = [
             self._lemmatise_sentence(sentence) for sentence in segmented_text
         ]
 
+        # 6: annotating
         annotated = []
         for i in range(len(segmented_text)):
             classification = classifier.prob_classify(segmented_text[i])
-            if (classification.max() == "1"):
+            if classification.max() == "1":
                 annotated.append(
-                    tuple((segmented_text[i], "pos", round(classification.prob("1"), 2)))
+                    tuple(
+                        (segmented_text[i], "pos", round(classification.prob("1"), 2))
+                    )
                 )
-            elif (classification.max() == "2"):
+            elif classification.max() == "2":
                 annotated.append(
-                    tuple((segmented_text[i], "neu", round(classification.prob("2"), 2)))
+                    tuple(
+                        (segmented_text[i], "neu", round(classification.prob("2"), 2))
+                    )
                 )
             else:
                 annotated.append(
-                    tuple((segmented_text[i], "neg", round(classification.prob("3"), 2)))
+                    tuple(
+                        (segmented_text[i], "neg", round(classification.prob("3"), 2))
+                    )
                 )
 
         return annotated

@@ -1,6 +1,5 @@
 import csv
 from textblob import TextBlob
-from textblob.classifiers import NaiveBayesClassifier
 from textblob.sentiments import NaiveBayesAnalyzer
 from tqdm import trange
 from typing import List
@@ -44,20 +43,34 @@ class Evaluator:
             else:
                 movie_values.append(2)
 
-        accuracy_custom, precision_custom, recall_custom = self.multi_precision_recall(ground_values, custom_values)
-        accuracy_movie, precision_movie, recall_movie = self.multi_precision_recall(ground_values, movie_values)
+        accuracy_custom, precision_custom, recall_custom = self.multi_precision_recall(
+            ground_values, custom_values
+        )
+        accuracy_movie, precision_movie, recall_movie = self.multi_precision_recall(
+            ground_values, movie_values
+        )
 
         with open(
             "./backend/data/self_annotated/evaluation_" + file_to_evaluate + ".csv", "w"
         ) as file:
             file.write("acc_custom, acc_movie\n")
             file.write(f"{accuracy_custom}, {accuracy_movie}\n")
-            file.write("pre_custom_1, pre_custom_2, pre_custom_3, pre_movie_1, pre_movie_2, pre_movie_3\n")
-            file.write(f"{precision_custom[0]}, {precision_custom[1]}, {precision_custom[2]}, {precision_movie[0]}, {precision_movie[1]}, {precision_movie[2]}\n")
-            file.write("rec_custom_1, rec_custom_2, rec_custom_3, rec_movie_1, rec_movie_2, rec_movie_3\n")
-            file.write(f"{recall_custom[0]}, {recall_custom[1]}, {recall_custom[2]}, {recall_movie[0]}, {recall_movie[1]}, {recall_movie[2]}")
+            file.write(
+                "pre_custom_1, pre_custom_2, pre_custom_3, pre_movie_1, pre_movie_2, pre_movie_3\n"
+            )
+            file.write(
+                f"{precision_custom[0]}, {precision_custom[1]}, {precision_custom[2]}, {precision_movie[0]}, {precision_movie[1]}, {precision_movie[2]}\n"
+            )
+            file.write(
+                "rec_custom_1, rec_custom_2, rec_custom_3, rec_movie_1, rec_movie_2, rec_movie_3\n"
+            )
+            file.write(
+                f"{recall_custom[0]}, {recall_custom[1]}, {recall_custom[2]}, {recall_movie[0]}, {recall_movie[1]}, {recall_movie[2]}"
+            )
 
-    def multi_precision_recall(self, ground_values: List[int], predict_values: List[int]):
+    def multi_precision_recall(
+        self, ground_values: List[int], predict_values: List[int]
+    ):
         # multiclass precision and recall
         entries = len(ground_values)
         predict_positive = [0, 0, 0]
@@ -111,7 +124,10 @@ class Evaluator:
         print(total_predict)
         print(total_ground)
 
-        accuracy = round((predict_positive[0] + predict_neutral[1] + predict_negative[2]) / entries, 2)
+        accuracy = round(
+            (predict_positive[0] + predict_neutral[1] + predict_negative[2]) / entries,
+            2,
+        )
         precision = [-1, -1, -1]
         recall = [-1, -1, -1]
 
