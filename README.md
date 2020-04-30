@@ -2,8 +2,9 @@
 
 ## Description
 
-Code: SCSE 19-0230
-Title: Sentiment Analysis on Online Text Articles
+Code: **SCSE 19-0230**
+
+Title: **Sentiment Analysis on Online Text Articles**
 
 Submitted in the Partial Fulfillment of the Requirements for the Degree of Bachelor of Engineering (Computer Science) of the Nanyang Technological University.
 
