@@ -36,7 +36,7 @@ class Annotator:
             return True, data
         except Exception as e:
             print(e)
-            return False, None
+            return False, []
 
     def _save(self, save_file: str, data: List[List[str]]) -> bool:
         try:

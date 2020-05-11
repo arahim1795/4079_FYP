@@ -35,10 +35,10 @@ def main():
     # -- internal annotation
     # annotator_instance.manual_annotation(articles[:50], "auto_annotated")
     # -- csv export
-    # annotator_instance.unannotated_csv_export(articles[:50], "auto_annotated")
+    annotator_instance.unannotated_csv_export(articles[:50], "auto_annotated")
 
     # - automatic
-    annotator_instance.automatic_annotation(articles, "auto_annotated")
+    # annotator_instance.automatic_annotation(articles, "auto_annotated")
 
     # 3: evaluate
     model_file = "auto_annotated"
