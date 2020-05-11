@@ -1,0 +1,6 @@
+acc_custom, acc_movie
+0.68, 0.18
+pre_custom_1, pre_custom_2, pre_custom_3, pre_movie_1, pre_movie_2, pre_movie_3
+0.45, 0.74, 1.0, 0.12, -1, 0.57
+rec_custom_1, rec_custom_2, rec_custom_3, rec_movie_1, rec_movie_2, rec_movie_3
+0.83, 0.88, 0.08, 0.83, 0.0, 0.33

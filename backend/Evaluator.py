@@ -9,7 +9,7 @@ class Evaluator:
     def __init__(self):
         pass
 
-    def evaluate_0(self, file_to_evaluate: str, classifier):
+    def evaluate(self, file_to_evaluate: str, classifier):
         data = None
         try:
             with open(
