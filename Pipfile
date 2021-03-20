@@ -50,7 +50,7 @@ wasabi = "==0.6.0"
 en-core-web-lg = {file = "https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-2.2.5/en_core_web_lg-2.2.5.tar.gz"}
 Flask = "==1.1.2"
 Flask-WTF = "==0.14.3"
-Jinja2 = "==2.11.2"
+Jinja2 = "==2.11.3"
 MarkupSafe = "==1.1.1"
 Pillow = "==7.1.2"
 PyYAML = "==5.3.1"
